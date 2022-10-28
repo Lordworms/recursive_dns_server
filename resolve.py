@@ -268,8 +268,10 @@ def main():
     """
     # start_time = datetime.now()
     global count
+
     dns_cache = {}
     dns_cache['response_cache'] = {}
+    '''
     argument_parser = argparse.ArgumentParser()
     argument_parser.add_argument("name", nargs="+",
                                  help="DNS name(s) to look up")
@@ -277,7 +279,11 @@ def main():
                                  help="increase output verbosity",
                                  action="store_true")
     program_args = argument_parser.parse_args()
-    for a_domain_name in program_args.name:
+    print(program_args)
+    '''
+    domain_names=['google.com']
+    #for a_domain_name in program_args.name:
+    for a_domain_name in domain_names:
         count = 0
         cache_result = dns_cache.get('response_cache').get(a_domain_name)
         if cache_result:
