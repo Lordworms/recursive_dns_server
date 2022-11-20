@@ -8,8 +8,8 @@ import dns.rdataclass
 import dns.rdatatype
 import dns.resolver
 import pydig
+import os
 from dns.exception import DNSException, Timeout
-
 def get_ip(domain):  
   ip_list = []
   try:
@@ -227,7 +227,7 @@ class Local_Dns_Resolver():
             count = 0
             cache_result = self.dns_cache.get('response_cache').get(a_domain_name)
             if cache_result:
-                #print("hit!")
+                print("hit!")
                 return cache_result['A']
             else:
                 res=self.collect_results(a_domain_name, self.dns_cache)
