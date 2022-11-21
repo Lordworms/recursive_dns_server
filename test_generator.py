@@ -49,6 +49,7 @@ class Test_Generator:
 
     def public_resolve(self,server, site, req_type):
         resolve_time = None
+        ip=None
         try:
             start = time.time()
             ip=self.query(site,server)
@@ -57,6 +58,7 @@ class Test_Generator:
             resolve_time = respTime
         except Exception as e:
             print (str(e))
+        print(ip)
         if server=="127.0.0.1":
             print("find ip:{} for domain:{}".format(ip,site))
         return resolve_time
@@ -68,25 +70,32 @@ class Test_Generator:
         inf.close()
         evaluate=[]
         k=0
-        for data in domains:
-            k+=1
-            res={}
-            domain=data['domain_name']
-            res["domain_name"]=domain
-            #local_time=self.local_resolve(domain)
-            local_time=self.public_resolve("127.0.0.1",domain,'A')
-            google_time=self.public_resolve("8.8.8.8",domain,'A')
-            cloudflare_time=self.public_resolve("1.1.1.1",domain,'A')
-            #fac=google_time/local_time
-            #if fac>=LIM and google_time>local_time:
-                #local_time*=FAC
-            res["local_time"]=str(local_time)
-            res["google_dns_time"]=str(google_time)
-            res["cloudflare_time"]=str(cloudflare_time)
-            evaluate.append(res)
-            if k==10:
-                break
-                print("test {}".format(k))
+        try:
+            for data in domains:
+                k+=1
+                res={}
+                print("now is {}".format(k))
+                domain=data['domain_name']
+                #domain="login-page.icims.com"
+                res["domain_name"]=domain
+                #local_time=self.local_resolve(domain)
+                local_time=self.public_resolve("127.0.0.1",domain,'A')
+                google_time=self.public_resolve("8.8.8.8",domain,'A')
+                cloudflare_time=self.public_resolve("1.1.1.1",domain,'A')
+                #fac=google_time/local_time
+                #if fac>=LIM and google_time>local_time:
+                    #local_time*=FAC
+                res["local_time"]=str(local_time)
+                res["google_dns_time"]=str(google_time)
+                res["cloudflare_time"]=str(cloudflare_time)
+                evaluate.append(res)
+                if k%500==0:
+                    print("test {}".format(k))
+        except:
+            data=json.dumps(evaluate)
+            with open(results_file_name,"w") as f:
+                f.write(data)
+            f.close()
         data=json.dumps(evaluate)
         with open(results_file_name,"w") as f:
             f.write(data)

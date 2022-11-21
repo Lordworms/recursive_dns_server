@@ -10,9 +10,10 @@ def get_ip_from_domain(domain):
     domain = domain.lower().strip()
     try:
         return local_resolver.getIp(domain);
-    except:
-        print("did not get the ip")
-        return dns_resolver.query(domain, 'A')[0].to_text()
+    except cr.func_timeout.exceptions.FunctionTimedOut:
+        ip=dns_resolver.query(domain, 'A')[0].to_text()
+        local_resolver.dns_cache['response_cache'][domain]=ip
+        return ip
 def reply_for_not_found(income_record):
     header = DNSHeader(id=income_record.header.id, bitmap=income_record.header.bitmap, qr=1)
     header.set_rcode(0)  # 3 DNS_R_NXDOMAIN, 2 DNS_R_SERVFAIL, 0 DNS_R_NOERROR
@@ -20,8 +21,13 @@ def reply_for_not_found(income_record):
     return record
 def reply_for_A(income_record, ip, ttl=None):
     if isinstance(ip,list):
-        print(ip)
-        ip=ip[0]['address']
+        if isinstance(ip[0],dict):
+            ip=ip[0]['address']
+        elif isinstance(ip[0],str):
+            for i in ip:
+                if i[0].isdigit():
+                   ip=i
+                   break 
     r_data = A(ip)
     header = DNSHeader(id=income_record.header.id, bitmap=income_record.header.bitmap, qr=1)
     domain = income_record.q.qname
@@ -44,15 +50,16 @@ def dns_handler(s, message, address):
     if qtype == 'A':
         ip = get_ip_from_domain(domain)
         if ip:
-            print("find {} for domain {}".format(ip,domain))
+            #print("find {} for domain {}".format(ip,domain))
             #print(income_record)
             response = reply_for_A(income_record, ip=ip, ttl=60)
             s.sendto(response.pack(), address)
             #return logging.info(info)
     # at last
         else:
-            print("did not find")
-            response = reply_for_not_found(income_record)
+            ip=cr.get_ip(domain)
+            local_resolver.dns_cache['response_cache'][domain]=ip
+            response = reply_for_A(income_record,ip=ip,ttl=60)
             s.sendto(response.pack(), address)
     
     #logging.info(info)
@@ -61,6 +68,11 @@ if __name__ == '__main__':
     udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     udp_sock.bind(('', 53))
     logging.info('dns server is started')
+    total=0
     while True:
+        total+=1
         message, address = udp_sock.recvfrom(8192)
         dns_handler(udp_sock, message, address)
+        #print(local_resolver.dns_cache)
+        if total%500==0:
+            print("total miss {}".format(local_resolver.miss))

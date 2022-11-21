@@ -9,6 +9,7 @@ import dns.rdatatype
 import dns.resolver
 import pydig
 import os
+from func_timeout import func_set_timeout
 from dns.exception import DNSException, Timeout
 def get_ip(domain):  
   ip_list = []
@@ -50,6 +51,7 @@ count = 0
 
 class Local_Dns_Resolver():
     def __init__(self):
+        self.miss=0
         self.dns_cache={}
         self.dns_cache['response_cache'] = {}
     def collect_results(self,name: str, dns_cache: dict) -> dict:
@@ -219,22 +221,27 @@ class Local_Dns_Resolver():
         ]
         )
         return resolver.query(str,"A")
-
+    #@func_set_timeout(10)
     def getIp(self,str):
         global count
         domain_names=[str]
-        for a_domain_name in domain_names:
-            count = 0
-            cache_result = self.dns_cache.get('response_cache').get(a_domain_name)
-            if cache_result:
-                print("hit!")
-                return cache_result['A']
-            else:
-                res=self.collect_results(a_domain_name, self.dns_cache)
-                if len(res['A'])==0:
-                    return self.default_look(str)
-                else :
-                    return res['A'][0]['address']
-                print_results(res)
-            logging.debug("count %s", count)
+        try:
+            for a_domain_name in domain_names:
+                count = 0
+                cache_result = self.dns_cache.get('response_cache').get(a_domain_name)
+                if cache_result:
+                    #print("hit!")
+                    return cache_result['A']
+                else:
+                    self.miss+=1
+                    res=self.collect_results(a_domain_name, self.dns_cache)
+                    if len(res['A'])==0:
+                        return self.default_look(str)
+                    else :
+                        return res['A'][0]['address']
+                    print_results(res)
+        except:
+            ip=get_ip(str)
+            self.dns_cache['response_cache'][str]=ip
+            return ip            
         
