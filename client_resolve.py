@@ -68,7 +68,8 @@ class Local_Dns_Resolver():
         full_response["A"] = arecords
         self.dns_cache.get('response_cache')[name] = full_response
         return full_response
-
+    def save_cache(self):
+        pass
     def lookup_recurse(self,target_name: dns.name.Name,
                     qtype: dns.rdata.Rdata,
                     ip_,
@@ -230,7 +231,7 @@ class Local_Dns_Resolver():
                 count = 0
                 cache_result = self.dns_cache.get('response_cache').get(a_domain_name)
                 if cache_result:
-                    #print("hit!")
+                    print("hit!")
                     return cache_result['A']
                 else:
                     self.miss+=1

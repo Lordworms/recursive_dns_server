@@ -2,6 +2,8 @@ from dns.resolver import Resolver
 from dnslib import DNSRecord, QTYPE, RD, SOA, DNSHeader, RR, A
 import logging
 import socket
+import os
+import json
 import client_resolve as cr
 dns_resolver = Resolver()
 dns_resolver.nameservers = ["8.8.8.8", "8.8.4.4"]
@@ -53,6 +55,7 @@ def dns_handler(s, message, address):
             #print("find {} for domain {}".format(ip,domain))
             #print(income_record)
             response = reply_for_A(income_record, ip=ip, ttl=60)
+            print(response)
             s.sendto(response.pack(), address)
             #return logging.info(info)
     # at last
@@ -63,16 +66,30 @@ def dns_handler(s, message, address):
             s.sendto(response.pack(), address)
     
     #logging.info(info)
-
+def reply():
+    message, address = udp_sock.recvfrom(8192)
+    dns_handler(udp_sock, message, address)
 if __name__ == '__main__':
     udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    results_path="/Users/xiangyanxin/personal/GraduateCourse/Advanced_Networking/project/code/response_time_check/results"
     udp_sock.bind(('', 53))
+    miss_file_name=os.path.join(results_path,"miss_rate")
+    miss=[]
     logging.info('dns server is started')
     total=0
     while True:
         total+=1
-        message, address = udp_sock.recvfrom(8192)
-        dns_handler(udp_sock, message, address)
-        #print(local_resolver.dns_cache)
-        if total%500==0:
-            print("total miss {}".format(local_resolver.miss))
+        if total>30000:
+            data=json.dumps(miss)
+            with open(miss_file_name,"w") as f:
+                f.write(data)
+                f.close()
+        try:
+            reply()
+            miss.append(float(local_resolver.miss)/float(total))
+        except:
+            data=json.dumps(miss)
+            with open(miss_file_name,"w") as f:
+                f.write(data)
+                f.close()
+

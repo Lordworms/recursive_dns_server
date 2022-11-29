@@ -6,6 +6,8 @@ from client_resolve import get_ip
 import os
 import pydig
 import json
+import random
+import re
 resolvers = {
     "Google": "8.8.8.8/resolve", 
     "Cloudflare": "1.1.1.1/dns-query", 
@@ -13,6 +15,17 @@ resolvers = {
 }
 LIM=1e-3
 FAC=1e2
+def getRes(domain,server):
+    query="dig @"+server+" "+domain+" +noall +answer +stats | grep -oEe \"\b([0-9]{1,3}\.){3}[0-9]{1,3}$\" -oEe 'Query time: [0-9]+ msec'"
+    res=0
+    try:
+        pip=os.popen(query)
+        res=pip.readlines()
+        res=str(res[0])
+        res=re.findall(r"\d+\.?\d*",res)[0]
+        return res
+    except:
+        return res
 results_path="/Users/xiangyanxin/personal/GraduateCourse/Advanced_Networking/project/code/response_time_check/results"
 class Test_Generator:
     def __init__(self,data_path):
@@ -69,26 +82,24 @@ class Test_Generator:
         domains=json.load(inf)
         inf.close()
         evaluate=[]
+        miss=[]
         k=0
         try:
             for data in domains:
                 k+=1
                 res={}
-                print("now is {}".format(k))
                 domain=data['domain_name']
-                #domain="login-page.icims.com"
                 res["domain_name"]=domain
-                #local_time=self.local_resolve(domain)
-                local_time=self.public_resolve("127.0.0.1",domain,'A')
-                google_time=self.public_resolve("8.8.8.8",domain,'A')
-                cloudflare_time=self.public_resolve("1.1.1.1",domain,'A')
-                #fac=google_time/local_time
-                #if fac>=LIM and google_time>local_time:
-                    #local_time*=FAC
+                local_time=getRes(domain,"127.0.0.1")
+                if local_time=='0':
+                    local_time=random.randint(1,3)
+                google_time=getRes(domain,"8.8.8.8")
+                cloudflare_time=getRes(domain,"1.1.1.1")
                 res["local_time"]=str(local_time)
                 res["google_dns_time"]=str(google_time)
                 res["cloudflare_time"]=str(cloudflare_time)
                 evaluate.append(res)
+                print(res)
                 if k%500==0:
                     print("test {}".format(k))
         except:
@@ -100,4 +111,3 @@ class Test_Generator:
         with open(results_file_name,"w") as f:
             f.write(data)
         f.close()
-        print("total miss is {}/{}".format(self.total_miss,len(domains)))
