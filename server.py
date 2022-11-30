@@ -79,15 +79,18 @@ if __name__ == '__main__':
     total=0
     while True:
         total+=1
+        '''
         if total>30000:
             data=json.dumps(miss)
             with open(miss_file_name,"w") as f:
                 f.write(data)
                 f.close()
+        '''
         try:
             reply()
-            miss.append(float(local_resolver.miss)/float(total))
+            #miss.append(float(local_resolver.miss)/float(total))
         except:
+            continue
             data=json.dumps(miss)
             with open(miss_file_name,"w") as f:
                 f.write(data)
