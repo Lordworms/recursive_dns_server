@@ -239,6 +239,8 @@ class Local_Dns_Resolver():
                     if len(res['A'])==0:
                         return self.default_look(str)
                     else :
+                        print("address!")
+                        print(res)
                         return res['A'][0]['address']
                     print_results(res)
         except:
